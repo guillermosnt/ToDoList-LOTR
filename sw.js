@@ -1,5 +1,5 @@
 // Sube este número en cada actualización para que los móviles avisen de la nueva versión.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = 'lotr-todo-' + VERSION;
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 

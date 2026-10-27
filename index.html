@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>La Misión del Día</title>
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0c0e0b">
@@ -157,6 +157,41 @@ li.gone{animation:vanish .4s forwards}
 .upd svg{flex:none;filter:drop-shadow(0 0 6px var(--accent))}
 .upd button{flex:none;font:600 13px var(--title);letter-spacing:.05em;color:#1c1405;border:1px solid var(--g3);border-radius:999px;padding:7px 16px;cursor:pointer;background:linear-gradient(180deg,var(--g1),var(--g2) 60%,var(--g3))}
 @keyframes slidedown{from{transform:translateY(-100%)}}
+
+/* ===== Pantalla fija: solo la lista de tareas se desplaza ===== */
+html{height:100vh;height:100dvh;overflow:hidden;overscroll-behavior:none}
+body{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:none;touch-action:manipulation}
+.upd{flex:none}
+main{flex:1;min-height:0;width:100%;max-width:440px;margin:0 auto;display:flex;flex-direction:column;padding:4px 14px 0;box-sizing:border-box}
+.hero,.journey,form,.tabs,.foot,.realms,.ver{flex:none}
+.ring{width:84px;height:84px}
+h1{font-size:clamp(22px,6.6vw,28px);margin:2px 0 0}
+.date{font-size:12px}
+.hero .orn{width:110px;margin:6px auto}
+form+.orn{display:none}
+.journey{margin:0 0 4px}
+.jt{margin:0 0 14px;font-size:11px}
+.track{margin-bottom:26px}
+form{margin-top:6px}
+input{font-size:20px;padding:6px 2px}
+.seal-btn{width:46px;height:46px;font-size:24px}
+.tabs{margin:6px 0 2px}
+.tab{padding:6px 12px;font-size:13px}
+ul{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;align-content:start;gap:14px;
+  padding:10px 12px 16px;scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%);mask-image:linear-gradient(transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%)}
+ul::-webkit-scrollbar{display:none}
+li{animation:none;margin:0 8px;padding:10px 10px 10px 14px;gap:10px}
+li.new{animation:unroll .5s cubic-bezier(.2,.8,.3,1)}
+li.gone{animation:vanish .4s forwards}
+.seal{width:36px;height:36px}
+.txt{font-size:19px}
+.foot{margin-top:2px;font-size:15px;padding:0 4px}
+.realms{margin:8px 0 0}
+.realms button{padding:5px 10px;font-size:12px}
+.ver{margin:6px 0 8px;font-size:11px}
+.mtn{height:120px}.doom{bottom:40px}
+@media (max-height:700px){.ring{width:58px;height:58px}.date,.hero .orn,.jt{display:none}h1{font-size:22px}.track{margin:14px 0 24px}}
 </style>
 </head>
 <body data-t="mordor">
@@ -258,25 +293,25 @@ li.gone{animation:vanish .4s forwards}
 
 <script>
 const $=s=>document.querySelector(s);
-const KEY='lotr-todo-v1',APP_VERSION='2';
+const KEY='lotr-todo-v1',APP_VERSION='3';
 let tasks=[];try{tasks=(JSON.parse(localStorage.getItem(KEY))||[]).map(x=>({id:x.id,t:x.text!==undefined?x.text:x.t,d:(x.done!==undefined?x.done:x.d)?1:0}))}catch(e){tasks=[]}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(tasks.map(x=>({id:x.id,text:x.t,done:!!x.d}))))}catch(e){}}
-let filter='all',fresh=null,nid=Date.now();
+let filter='all',fresh=null,added=null,nid=Date.now();
 $('#date').textContent=new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function pulse(){const r=$('#ring');r.classList.remove('flare');void r.offsetWidth;r.classList.add('flare')}
 $('#ring').onclick=pulse;
 function render(){save();$('#clr').style.visibility=tasks.some(x=>x.d)?'visible':'hidden';
   const s=tasks.filter(x=>filter==='all'||(filter==='done')===!!x.d);
-  $('#list').innerHTML=s.length?s.map(x=>`<li class="${x.d?'done':''}${x.id===fresh?' fresh':''}" data-id="${x.id}"><button class="seal" aria-label="Sellar misión" aria-pressed="${!!x.d}"></button><span class="txt">${esc(x.t)}</span><button class="del" aria-label="Eliminar">×</button></li>`).join(''):`<li class="empty" style="display:block;background:none;box-shadow:none;animation:none;color:var(--dim)">La Comarca está en calma.<br>Inscribe tu primera misión.</li>`;
-  document.querySelectorAll('.empty').forEach(e=>e.style.setProperty('--x',0));
+  $('#list').innerHTML=s.length?s.map(x=>`<li class="${x.d?'done':''}${x.id===fresh?' fresh':''}${x.id===added?' new':''}" data-id="${x.id}"><button class="seal" aria-label="Sellar misión" aria-pressed="${!!x.d}"></button><span class="txt">${esc(x.t)}</span><button class="del" aria-label="Eliminar">×</button></li>`).join(''):`<li class="empty" style="display:block;background:none;box-shadow:none;animation:none;color:var(--dim)">La Comarca está en calma.<br>Inscribe tu primera misión.</li>`;
+  added=null;
   const d=tasks.filter(x=>x.d).length,p=tasks.length?d/tasks.length*100:0;
   $('#fill').style.width=p+'%';$('#token').style.left=p+'%';
   document.querySelectorAll('.stop').forEach((e,i)=>e.classList.toggle('on',p>=i*25&&(p>0||i===0)));
   $('#count').textContent=tasks.length?`${d} de ${tasks.length} cumplidas`:'';
   $('#jt').textContent=p===100&&tasks.length?'LA MISIÓN HA CONCLUIDO. EL ANILLO ESTÁ A SALVO.':'EL CAMINO A LA MONTAÑA DEL DESTINO';
 }
-$('#form').onsubmit=e=>{e.preventDefault();const v=$('#in').value.trim();if(!v)return;tasks.unshift({id:nid++,t:v,d:0});$('#in').value='';fresh=null;render();pulse()};
+$('#form').onsubmit=e=>{e.preventDefault();const v=$('#in').value.trim();if(!v)return;const nidv=nid++;tasks.unshift({id:nidv,t:v,d:0});added=nidv;$('#in').value='';fresh=null;render();$('#list').scrollTop=0;pulse()};
 $('#list').onclick=e=>{const li=e.target.closest('li[data-id]');if(!li)return;const t=tasks.find(x=>x.id==li.dataset.id);
   if(e.target.closest('.seal')){t.d=t.d?0:1;fresh=t.d?t.id:null;if(t.d){pulse();burst(e.clientX,e.clientY)}render();if(t.d&&tasks.every(x=>x.d))setTimeout(victory,1300)}
   else if(e.target.closest('.del')){li.classList.add('gone');setTimeout(()=>{tasks=tasks.filter(x=>x.id!=t.id);render()},380)}};
